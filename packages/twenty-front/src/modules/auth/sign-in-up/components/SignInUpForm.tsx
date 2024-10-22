@@ -1,7 +1,7 @@
 import { useTheme } from '@emotion/react';
 import styled from '@emotion/styled';
 import { motion } from 'framer-motion';
-import { useMemo, useState } from 'react';
+import { useMemo, useState ,useEffect } from 'react';
 import { Controller } from 'react-hook-form';
 import { useRecoilState, useRecoilValue } from 'recoil';
 import { Key } from 'ts-key-enum';
@@ -43,6 +43,7 @@ const StyledInputContainer = styled.div`
   margin-bottom: ${({ theme }) => theme.spacing(3)};
 `;
 
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export const SignInUpForm = () => {
   const captchaProvider = useRecoilValue(captchaProviderState);
   const isRequestingCaptchaToken = useRecoilValue(
@@ -50,11 +51,17 @@ export const SignInUpForm = () => {
   );
   const [authProviders] = useRecoilState(authProvidersState);
   const [showErrors, setShowErrors] = useState(false);
+  const [emailValid, setEmailValid] = useState(false); 
   const { signInWithGoogle } = useSignInWithGoogle();
   const { signInWithMicrosoft } = useSignInWithMicrosoft();
   const { form } = useSignInUpForm();
   const { handleResetPassword } = useHandleResetPassword();
 
+  useEffect(() => {
+    const email = form.watch('email');
+    setEmailValid(emailRegex.test(email)); // Set email validity
+   }, [form.watch('email')]);  
+  
   const {
     signInUpStep,
     signInUpMode,
@@ -123,7 +130,7 @@ export const SignInUpForm = () => {
 
   const isEmailStepSubmitButtonDisabledCondition =
     signInUpStep === SignInUpStep.Email &&
-    (form.watch('email')?.length === 0 || shouldWaitForCaptchaToken);
+    (!emailValid || shouldWaitForCaptchaToken);
 
   // TODO: isValid is actually a proxy function. If it is not rendered the first time, react might not trigger re-renders
   // We make the isValid check synchronous and update a reactState to make sure this does not happen
